@@ -1,6 +1,9 @@
 name: Run Tests
 
-on: [pull_request]
+on: 
+  push:
+    branches:
+      - test-datasets*
 
 env:
   HF_HOME: ~/hf_cache
