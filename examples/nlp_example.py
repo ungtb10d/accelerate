@@ -207,10 +207,6 @@ if __name__ == "__main__":
     console = Console()
     try:
         main()
-    except ChildFailedError as e:
-        _, failure = e.get_first_failure()
-        error_handler.dump_error_file(failure.error_file, failure.exitcode)
-        console.print_exception()
     except:
         # error_handler.record(e)
         if _is_local_main_process():

@@ -146,7 +146,6 @@ def training_function(config, args):
     model, optimizer, train_dataloader, eval_dataloader, lr_scheduler = accelerator.prepare(
         model, optimizer, train_dataloader, eval_dataloader, lr_scheduler
     )
-    raise ValueError()
 
     # Now we train the model
     for epoch in range(num_epochs):
@@ -158,6 +157,7 @@ def training_function(config, args):
             # We use the new `accumulate` context manager to perform gradient accumulation
             # We also currently do not support TPUs nor advise it as bugs were found on the XLA side when running our tests.
             with accelerator.accumulate(model):
+                batch = batch[0]
                 output = model(**batch)
                 loss = output.loss
                 accelerator.backward(loss)
@@ -228,8 +228,10 @@ if __name__ == "__main__":
     console = Console()
     try:
         main()
-    except Exception as e:
+    except:
         if _is_local_main_process():
-            console.print_exception(show_locals=False)
-        sys.exit(0)
+            console.print_exception(show_locals=True)
+            raise
+        else:
+            os._exit()
     
