@@ -23,6 +23,7 @@ from accelerate import Accelerator, DistributedType
 from datasets import load_dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, get_linear_schedule_with_warmup, set_seed
 
+from rich.console import Console
 
 ########################################################################
 # This is a fully working simple example to use Accelerate
@@ -121,6 +122,7 @@ def training_function(config, args):
 
     # Instantiate optimizer
     optimizer = AdamW(params=model.parameters(), lr=lr)
+    raise ValueError()
 
     # Instantiate scheduler
     lr_scheduler = get_linear_schedule_with_warmup(
@@ -168,7 +170,6 @@ def training_function(config, args):
         # Use accelerator.print to print only on the main process.
         accelerator.print(f"epoch {epoch}:", eval_metric)
 
-
 def main():
     parser = argparse.ArgumentParser(description="Simple example of training script.")
     parser.add_argument(
@@ -185,6 +186,33 @@ def main():
     config = {"lr": 2e-5, "num_epochs": 3, "seed": 42, "batch_size": 16}
     training_function(config, args)
 
+from torch.distributed.elastic.multiprocessing.errors import get_error_handler, ChildFailedError
+from accelerate.state import get_int_from_env
+
+def _is_local_main_process():
+    if torch.distributed.is_initialized():
+        return (
+            get_int_from_env(
+                ["LOCAL_RANK", "MPI_LOCALRANKID", "OMPI_COMM_WORLD_LOCAL_RANK", "MV2_COMM_WORLD_LOCAL_RANK"], 0
+            )
+            == 0
+        )
+    else:
+        return True
+
 
 if __name__ == "__main__":
-    main()
+    error_handler = get_error_handler()
+    error_handler.initialize()
+    console = Console()
+    try:
+        main()
+    except ChildFailedError as e:
+        _, failure = e.get_first_failure()
+        error_handler.dump_error_file(failure.error_file, failure.exitcode)
+        console.print_exception()
+    except:
+        # error_handler.record(e)
+        if _is_local_main_process():
+            console.print_exception(show_locals=True)
+    

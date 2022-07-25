@@ -42,6 +42,50 @@ from accelerate.utils import (
 from accelerate.utils.constants import DEEPSPEED_MULTINODE_LAUNCHERS
 from accelerate.utils.dataclasses import SageMakerDistributedType
 
+from contextlib import contextmanager
+
+import torch
+
+from rich.console import Console
+
+from accelerate.state import get_int_from_env
+from accelerate.utils.imports import is_tpu_available
+
+
+if is_tpu_available(check_device=False):
+    import torch_xla.core.xla_model as xm
+
+
+def _is_local_main_process():
+    if is_tpu_available():
+        return xm.get_local_ordinal() == 0
+    elif torch.distributed.is_initialized():
+        return (
+            get_int_from_env(
+                ["LOCAL_RANK", "MPI_LOCALRANKID", "OMPI_COMM_WORLD_LOCAL_RANK", "MV2_COMM_WORLD_LOCAL_RANK"], 0
+            )
+            == 0
+        )
+    else:
+        return True
+
+
+@contextmanager
+def clean_traceback(show_locals: bool = False):
+    """
+    A context manager that uses `rich` to provide a clean traceback when dealing with multiprocessed logs.
+    Args:
+        show_locals (`bool`, *optional*, defaults to False):
+            Whether to show local objects as part of the final traceback
+    """
+
+    console = Console()
+    try:
+        yield
+    except:
+        if _is_local_main_process():
+            console.print_exception(suppress=[__file__], show_locals=show_locals)
+
 
 logger = logging.getLogger(__name__)
 
@@ -368,10 +412,20 @@ def multi_gpu_launcher(args):
         current_env["FSDP_SHARDING_STRATEGY"] = str(args.sharding_strategy)
         current_env["FSDP_BACKWARD_PREFETCH"] = str(args.fsdp_backward_prefetch_policy)
     current_env["OMP_NUM_THREADS"] = str(args.num_cpu_threads_per_process)
-    process = subprocess.Popen(cmd, env=current_env)
-    process.wait()
+    with open("err.txt", "w") as f:
+        process = subprocess.Popen(cmd, env=current_env, stdout=f, stderr=subprocess.DEVNULL)
+        process.wait()
     if process.returncode != 0:
-        raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
+        from rich.console import Console
+        from rich.syntax import Syntax
+        console = Console()
+        err = open("err.txt", "r").readlines()
+        err[0] = f"\n {err[0]}"
+        console.print(*err)
+        import sys
+        sys.tracebacklimit = 0
+        raise Exception(f"Running {cmd} failed, see the stack trace above")
+        # raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
 
 
 def deepspeed_launcher(args):
@@ -458,10 +512,16 @@ def deepspeed_launcher(args):
                     continue
                 f.write(f"{key}={value}\n")
 
-    process = subprocess.Popen(cmd, env=current_env)
-    process.wait()
-    if process.returncode != 0:
-        raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
+    with clean_traceback():
+        _ = subprocess.check_output(cmd, env=env)
+    # except:
+    #     with clean_traceback():
+    #         raise
+    #     clean_traceback()
+    # process = subprocess.Popen(cmd, env=current_env)
+    # process.wait()
+    # if process.returncode != 0:
+    #     raise subprocess.CalledProcessError(returncode=process.returncode, cmd=cmd)
 
 
 def tpu_launcher(args):

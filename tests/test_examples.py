@@ -212,5 +212,8 @@ class FeatureExamplesTests(TempDirTestCase):
             self.assertTrue(os.path.exists(os.path.join(tmpdir, "tracking")))
 
     def test_gradient_accumulation(self):
+        import subprocess
         testargs = ["examples/by_feature/gradient_accumulation.py"]
-        run_command(self._launch_args + testargs)
+        process = subprocess.run(self._launch_args+testargs, stderr=subprocess.PIPE)
+        if process.returncode != 0:
+            self.fail("Error occured, see previous trace")

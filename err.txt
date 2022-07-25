@@ -1,0 +1,35 @@
+╭─────────────────────────────── Traceback (most recent call last) ────────────────────────────────╮
+│ /home/zach_mueller_huggingface_co/accelerate/examples/by_feature/gradient_accumulation.py:232 in │
+│ <module>                                                                                         │
+│                                                                                                  │
+│   229 │   error_handler.initialize()                                                             │
+│   230 │   console = Console()                                                                    │
+│   231 │   try:                                                                                   │
+│ ❱ 232 │   │   main()                                                                             │
+│   233 │   except Exception as e:                                                                 │
+│   234 │   #     # error_handler.record(e)                                                        │
+│   235 │   │   if _is_local_main_process():                                                       │
+│                                                                                                  │
+│ /home/zach_mueller_huggingface_co/accelerate/examples/by_feature/gradient_accumulation.py:207 in │
+│ main                                                                                             │
+│                                                                                                  │
+│   204 │   parser.add_argument("--cpu", action="store_true", help="If passed, will train on the   │
+│   205 │   args = parser.parse_args()                                                             │
+│   206 │   config = {"lr": 2e-5, "num_epochs": 3, "seed": 42, "batch_size": 16}                   │
+│ ❱ 207 │   training_function(config, args)                                                        │
+│   208                                                                                            │
+│   209                                                                                            │
+│   210 from torch.distributed.elastic.multiprocessing.errors import get_error_handler, ChildFai   │
+│                                                                                                  │
+│ /home/zach_mueller_huggingface_co/accelerate/examples/by_feature/gradient_accumulation.py:149 in │
+│ training_function                                                                                │
+│                                                                                                  │
+│   146 │   model, optimizer, train_dataloader, eval_dataloader, lr_scheduler = accelerator.prep   │
+│   147 │   │   model, optimizer, train_dataloader, eval_dataloader, lr_scheduler                  │
+│   148 │   )                                                                                      │
+│ ❱ 149 │   raise ValueError()                                                                     │
+│   150 │                                                                                          │
+│   151 │   # Now we train the model                                                               │
+│   152 │   for epoch in range(num_epochs):                                                        │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+ValueError

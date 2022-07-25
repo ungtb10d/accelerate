@@ -146,6 +146,7 @@ def training_function(config, args):
     model, optimizer, train_dataloader, eval_dataloader, lr_scheduler = accelerator.prepare(
         model, optimizer, train_dataloader, eval_dataloader, lr_scheduler
     )
+    raise ValueError()
 
     # Now we train the model
     for epoch in range(num_epochs):
@@ -206,5 +207,29 @@ def main():
     training_function(config, args)
 
 
+from torch.distributed.elastic.multiprocessing.errors import get_error_handler, ChildFailedError
+from accelerate.state import get_int_from_env
+from rich.console import Console
+
+def _is_local_main_process():
+    if torch.distributed.is_initialized():
+        return (
+            get_int_from_env(
+                ["LOCAL_RANK", "MPI_LOCALRANKID", "OMPI_COMM_WORLD_LOCAL_RANK", "MV2_COMM_WORLD_LOCAL_RANK"], 0
+            )
+            == 0
+        )
+    else:
+        return True
+
+import sys
+
 if __name__ == "__main__":
-    main()
+    console = Console()
+    try:
+        main()
+    except Exception as e:
+        if _is_local_main_process():
+            console.print_exception(show_locals=False)
+        sys.exit(0)
+    
