@@ -45,9 +45,13 @@ def get_cluster_input():
     }
 
     distributed_type = _ask_field(
-        f"Which type of machine are you using? ([{RICH_COLORS[0]}][0] No distributed training[/{RICH_COLORS[0]}], [{RICH_COLORS[1]}][1] multi-CPU[/{RICH_COLORS[1]}], [{RICH_COLORS[2]}][2] multi-GPU[/{RICH_COLORS[2]}], [{RICH_COLORS[3]}][3] TPU[/{RICH_COLORS[3]}], [{RICH_COLORS[4]}][4] MPS[/{RICH_COLORS[4]}])",
-        "int",
-        choices=["0", "1", "2", "3", "4"],
+        f"Which type of machine are you using?",
+        choices=[
+            f"[{RICH_COLORS[0]}]No distributed training[/{RICH_COLORS[0]}]", 
+            f"[{RICH_COLORS[1]}]multi-CPU[/{RICH_COLORS[1]}]",
+            f"[{RICH_COLORS[2]}]multi-GPU[/{RICH_COLORS[2]}]", 
+            f"[{RICH_COLORS[3]}]TPU[/{RICH_COLORS[3]}]", 
+            f"[{RICH_COLORS[4]}]MPS[/{RICH_COLORS[4]}]"],
     )
     config["distributed_type"] = _convert_distributed_mode(distributed_type)
 

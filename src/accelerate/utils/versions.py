@@ -19,7 +19,6 @@ from packaging.version import Version, parse
 
 from .constants import STR_OPERATION_TO_FUNC
 
-
 if sys.version_info < (3, 8):
     import importlib_metadata
 else:

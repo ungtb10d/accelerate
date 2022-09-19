@@ -16,6 +16,8 @@ from rich import get_console
 from rich.prompt import Confirm, FloatPrompt, IntPrompt, Prompt
 from rich.traceback import install
 
+from richmenu import Menu
+
 
 console = get_console()
 
@@ -26,10 +28,15 @@ _kind2prompt = {"bool": Confirm.ask, "float": FloatPrompt.ask, "int": IntPrompt.
 
 
 def _ask_field(prompt, kind="default", choices=None, default=None, password=False):
-    if default is None:
-        if kind == "bool":
-            default = False
-        elif kind == "int":
-            default = "0"
-    show_choices = prompt.find("[0]") == -1
-    return _kind2prompt[kind](prompt, default=default, choices=choices, show_choices=show_choices, password=password)
+    if choices is not None:
+        choices = {i:choice for i, choice in enumerate(choices)}
+        return Menu.prompt(
+            prompt, choices
+        )
+    else:
+        if default is None:
+            if kind == "bool":
+                default = False
+            elif kind == "int":
+                default = "0"
+        return _kind2prompt[kind](prompt, default=default, password=password)
